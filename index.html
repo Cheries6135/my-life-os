@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#263d35">
+<title>My Life OS</title>
+<style>
+:root {
+  --green:#29483b;
+  --light:#edf3ed;
+  --cream:#faf8f2;
+  --text:#26352e;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  background:var(--cream);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang TC",sans-serif;
+}
+main {
+  max-width:520px;
+  margin:auto;
+  padding:25px 20px 45px;
+}
+header { padding:15px 0 24px; }
+.eyebrow {
+  font-size:12px;
+  letter-spacing:2px;
+  color:#748477;
+}
+h1 { font-size:30px; margin:9px 0; }
+.sub { color:#78847b; font-size:14px; }
+.quote {
+  background:var(--green);
+  color:white;
+  border-radius:20px;
+  padding:22px;
+  line-height:1.8;
+  margin:12px 0 25px;
+}
+.quote strong { display:block; font-size:18px; }
+.date { color:#d9e6dc; font-size:13px; }
+h2 { font-size:19px; margin:25px 0 14px; }
+.progress-card,.task,.journal {
+  background:white;
+  border-radius:16px;
+  padding:17px;
+  margin-bottom:12px;
+  border:1px solid #e9eae3;
+}
+.progress-line {
+  height:9px;
+  border-radius:20px;
+  background:#e8eee8;
+  overflow:hidden;
+  margin-top:12px;
+}
+#bar {
+  height:100%;
+  width:0;
+  background:#648a70;
+  transition:.2s;
+}
+.task {
+  display:flex;
+  align-items:center;
+  gap:13px;
+  cursor:pointer;
+}
+.task input {
+  width:22px;
+  height:22px;
+  accent-color:#52785e;
+}
+.task strong { display:block; font-size:15px; }
+.task small { color:#929991; display:block; margin-top:5px; }
+.task.done strong {
+  text-decoration:line-through;
+  color:#9ba39b;
+}
+select,textarea {
+  width:100%;
+  border:1px solid #e3e7df;
+  background:white;
+  border-radius:12px;
+  padding:14px;
+  font-size:15px;
+  color:var(--text);
+}
+textarea { min-height:95px; resize:vertical; }
+button {
+  border:0;
+  background:var(--green);
+  color:white;
+  border-radius:12px;
+  padding:14px 20px;
+  font-size:15px;
+  width:100%;
+  margin-top:12px;
+}
+.note { color:#899289; font-size:12px; line-height:1.7; }
+footer {
+  text-align:center;
+  color:#879287;
+  font-size:12px;
+  margin-top:30px;
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eyebrow">MY PERSONAL GROWTH COMPANION</div>
+  <h1>My Life OS 🌱</h1>
+  <div class="sub">每天进步一点，不需要完美。</div>
+</header>
+
+<section class="quote">
+  <div class="date" id="today"></div>
+  <strong>我不需要证明自己有价值。</strong>
+  今天，我只需要为自己前进一步。❤️
+</section>
+
+<h2>今日成长进度</h2>
+<section class="progress-card">
+  <strong id="count">0 / 5 已完成</strong>
+  <div class="progress-line"><div id="bar"></div></div>
+  <p class="note" id="message">每完成一件小事，都是一次进步。</p>
+</section>
+
+<h2>每日打卡 ✓</h2>
+<div id="tasks"></div>
+
+<h2>今天的心情</h2>
+<section class="journal">
+  <select id="mood">
+    <option value="">选择今天的心情</option>
+    <option>😊 开心</option>
+    <option>😌 平静</option>
+    <option>😴 疲惫</option>
+    <option>😟 焦虑</option>
+    <option>🥰 感恩</option>
+    <option>😔 失落</option>
+  </select>
+  <h2>今天值得肯定自己的事情</h2>
+  <textarea id="journal" placeholder="今天，我做到了什么？即使很小也值得肯定……"></textarea>
+  <button id="save">保存今天的记录</button>
+  <p class="note" id="saved"></p>
+</section>
+
+<footer>
+  MY LIFE OS · 每一天都是新的开始 🌿
+</footer>
+</main>
+
+<script>
+const taskList = [
+  ["为自己的未来投入30分钟","事业 / AI / 个人成长"],
+  ["完成今天最重要的一件事","先行动15分钟，不追求完美"],
+  ["给自己一点休息时间","安心休息，不需要内疚"],
+  ["记录一件值得肯定自己的事情","建立成就感与自我价值"],
+  ["睡前回顾今天的心情","好好照顾自己的内心"]
+];
+
+const keyDate = () => {
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+};
+const storageKey = () => "myLifeOS-"+keyDate();
+
+let records = {};
+try {
+  records = JSON.parse(localStorage.getItem(storageKey()) || "{}");
+} catch(e) {
+  records = {};
+}
+
+document.getElementById("today").textContent =
+  new Date().toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric"});
+
+const taskArea = document.getElementById("tasks");
+
+taskList.forEach((task,i) => {
+  const label = document.createElement("label");
+  label.className = "task";
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = !!(records.tasks && records.tasks[i]);
+
+  const content = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = task[0];
+  const detail = document.createElement("small");
+  detail.textContent = task[1];
+
+  content.append(title,detail);
+  label.append(checkbox,content);
+  taskArea.append(label);
+
+  const update = () => {
+    records.tasks = records.tasks || {};
+    records.tasks[i] = checkbox.checked;
+    localStorage.setItem(storageKey(),JSON.stringify(records));
+    label.classList.toggle("done",checkbox.checked);
+    updateProgress();
+  };
+
+  checkbox.addEventListener("change",update);
+  label.classList.toggle("done",checkbox.checked);
+});
+
+function updateProgress() {
+  const done = taskList.filter((_,i)=>records.tasks && records.tasks[i]).length;
+  document.getElementById("count").textContent = done+" / 5 已完成";
+  document.getElementById("bar").style.width = (done/5*100)+"%";
+  document.getElementById("message").textContent =
+    done===5 ? "今天完成了！你做到了！❤️" :
+    done===0 ? "每完成一件小事，都是一次进步。" :
+    "已经完成 "+done+" 件，继续加油！";
+}
+updateProgress();
+
+document.getElementById("mood").value = records.mood || "";
+document.getElementById("journal").value = records.journal || "";
+
+document.getElementById("save").addEventListener("click",()=>{
+  records.mood = document.getElementById("mood").value;
+  records.journal = document.getElementById("journal").value;
+  localStorage.setItem(storageKey(),JSON.stringify(records));
+  document.getElementById("saved").textContent =
+    "❤️ 今天的记录已保存在这台设备上！";
+});
+</script>
+</body>
+</html>
